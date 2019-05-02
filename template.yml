@@ -28,7 +28,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: 'lambda/custom'
-      Handler: hello_world.handler
+      Handler: lambda_function.handler
       Runtime: python3.7
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:

@@ -13,10 +13,10 @@ What's Here
 -----------
 * skill.json - contains the skill manifest that provides Alexa with your skill metadata. [See manifest documentation here](https://developer.amazon.com/docs/smapi/skill-manifest.html)
 * interactionModels - contains interaction model files in JSON format. [See interaction model documentation here](https://developer.amazon.com/docs/smapi/interaction-model-schema.html).
-  * en-US.json - contains the interaction model for the en-US locale.
+  * en-GB.json - contains the interaction model for the en-US locale.
 * lambda - the parent folder that contains the code of all Lambda functions of this skill.
   * custom
-    * hello_world.py - contains the request handling code that will be deployed to AWS Lambda function.
+    * lambda_function.py - contains the request handling code that will be deployed to AWS Lambda function.
     * requirements.txt - contains a list of dependencies to be installed.
 * buildspec.yml - used by AWS CodeBuild to package the Lambda function code to be deployed by CodePipeline using CloudFormation.
 * template.yml - the template with reference to Lambda function code to be deployed by CloudFormation.
