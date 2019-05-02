@@ -3,19 +3,18 @@
     "publishingInformation": {
       "locales": {
         "en-GB": {
-          "summary": "A basic skill made from Alexa Skills Kit template",
+          "summary": "An application to take care of plants, like turn on water or give sensor values made from Alexa Skills Kit template",
           "examplePhrases": [
-            "Alexa open hello python",
-            "Alexa tell hello python hello",
-            "Alexa ask hello python say hello"
+            "Alexa tell smart garden to water",
+            "Alexa ask smart garden the status of my plants"
           ],
-          "name": "hello python",
-          "description": "A basic skill made from Alexa Skills Kit template"
+          "name": "Smart Garden Skill",
+          "description": "A skill made for garden using Alexa Skills Kit"
         }
       },
       "isAvailableWorldwide": true,
       "testingInstructions": "Sample Testing Instructions.",
-      "category": "EDUCATION_AND_REFERENCE",
+      "category": "SMART_HOME",
       "distributionCountries": []
     },
     "apis": {

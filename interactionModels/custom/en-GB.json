@@ -1,8 +1,12 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "hello python",
+            "invocationName": "smart garden",
             "intents": [
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
                 {
                     "name": "AMAZON.CancelIntent",
                     "samples": []
@@ -16,16 +20,19 @@
                     "samples": []
                 },
                 {
-                    "name": "HelloWorldIntent",
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "WaterPlantsIntent",
                     "slots": [],
                     "samples": [
-                        "hello",
-                        "how are you",
-                        "say hi world",
-                        "say hi",
-                        "hi",
-                        "say hello world",
-                        "say hello"
+                        "get it wet",
+                        "water",
+                        "make it rain",
+                        "rain",
+                        "water the plants",
+                        "water my plants"
                     ]
                 }
             ],

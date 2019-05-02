@@ -13,7 +13,7 @@ What's Here
 -----------
 * skill.json - contains the skill manifest that provides Alexa with your skill metadata. [See manifest documentation here](https://developer.amazon.com/docs/smapi/skill-manifest.html)
 * interactionModels - contains interaction model files in JSON format. [See interaction model documentation here](https://developer.amazon.com/docs/smapi/interaction-model-schema.html).
-  * en-GB.json - contains the interaction model for the en-US locale.
+  * en-GB.json - contains the interaction model for the en-GB locale.
 * lambda - the parent folder that contains the code of all Lambda functions of this skill.
   * custom
     * lambda_function.py - contains the request handling code that will be deployed to AWS Lambda function.
