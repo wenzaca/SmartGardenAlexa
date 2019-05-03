@@ -17,3 +17,4 @@ class PhraseEnum(Enum):
     WATERING_ON = 'Watering turned on'
     TOO_WET_TO_WATER = 'Soil moisture is too wet, the value is '
     LAUNCH_REQUEST = "Welcome, you can say Hello or Help. Which would you like to try?"
+    SENSOR_READING = "The {} is {}"

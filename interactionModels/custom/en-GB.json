@@ -34,6 +34,22 @@
                         "water the plants",
                         "water my plants"
                     ]
+                },
+                {
+                    "name": "SensorReadingHandler",
+                    "slots": [],
+                    "samples": [
+                        "how are the plants",
+                        "the sensors values",
+                        "the situation",
+                        "the sensors",
+                        "how are the values",
+                        "about my plants",
+                        "how is the garden",
+                        "about the readings",
+                        "the readings",
+                        "how is it"
+                    ]
                 }
             ],
             "types": []

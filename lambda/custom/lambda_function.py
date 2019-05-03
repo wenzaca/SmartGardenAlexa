@@ -19,49 +19,70 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+def get_readings_from_dynamo(self):
+    dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+    table = dynamodb.Table('smartgarden_readings')
+    startdate = date.today().isoformat()
+    response = table.query(KeyConditionExpression='id = :id_smartgarden AND datetimeid >= :begindate',
+                           ExpressionAttributeValues={
+                               ':id_smartgarden': 'id_smartgarden',
+                               ':begindate': startdate},
+                           ScanIndexForward=False
+                           )
+    items = response['Items']
+    n = 1  # get latest data
+    data = items[:n]
+    return data
+
+
 # Built-in Intent Handlers
 class WaterPlantsHandler(AbstractRequestHandler):
-    """Handler for Skill Launch and WaterPlants Intent."""
+    """Handler for Skill WaterPlants Intent."""
 
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        return (is_request_type("LaunchRequest")(handler_input) or
-                is_intent_name("WaterPlantsIntent")(handler_input))
+        return is_intent_name("WaterPlantsIntent")(handler_input)
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         logger.info("In WaterPlantsHandler")
 
-        response_alexa = ''
-
-        dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
-        table = dynamodb.Table('smartgarden_readings')
-
-        startdate = date.today().isoformat()
-        response = table.query(KeyConditionExpression='id = :id_smartgarden AND datetimeid >= :begindate',
-                               ExpressionAttributeValues={
-                                   ':id_smartgarden': 'id_smartgarden',
-                                   ':begindate': startdate},
-                               ScanIndexForward=False
-                               )
-
-        items = response['Items']
-
-        n = 1  # get latest data
-        data = items[:n]
-        moisture = data[0]['Items'][0]['moisture1']
+        data = get_readings_from_dynamo()
+        moisture = data[0]['Items']['moisture1']
         if moisture > 50:
             response_alexa = phrase_enum.TOO_WET_TO_WATER + moisture
         else:
             client = boto3.client('iot-data', region_name='eu-west-1')
 
             # Change topic, qos and payload
-            response = client.publish(
+            client.publish(
                 topic='smartgarden/watering',
                 qos=1,
                 payload=json.dumps({"action": "ON", "requester": "Alexa"})
             )
             response_alexa = phrase_enum.WATERING_ON
+
+        handler_input.response_builder.speak(response_alexa)
+        return handler_input.response_builder.response
+
+
+# Built-in Intent Handlers
+class SensorReadingHandler(AbstractRequestHandler):
+    """Handler for Skill SensorReading Intent."""
+
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("SensorReadingIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In SensorReadingHandler")
+
+        data = get_readings_from_dynamo()[0]['Items']
+        response_alexa = ''
+
+        for key, value in data:
+            response_alexa += phrase_enum.SENSOR_READING.format(key, value)
 
         handler_input.response_builder.speak(response_alexa)
         return handler_input.response_builder.response
@@ -95,6 +116,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         logger.info("In LaunchRequestHandler")
         handler_input.response_builder.speak(phrase_enum.LAUNCH_REQUEST).ask(phrase_enum.LAUNCH_REQUEST)
         return handler_input.response_builder.response
+
 
 class CancelOrStopIntentHandler(AbstractRequestHandler):
     """Single handler for Cancel and Stop Intent."""
@@ -190,6 +212,7 @@ sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
+sb.add_request_handler(SensorReadingHandler())
 
 # Register exception handlers
 sb.add_exception_handler(CatchAllExceptionHandler())
