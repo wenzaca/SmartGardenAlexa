@@ -36,9 +36,16 @@
                     ]
                 },
                 {
-                    "name": "SensorReadingHandler",
-                    "slots": [],
+                    "name": "SensorReadingIntent",
+                    "slots": [
+                        {
+                            "name": "AWS.Slot.Sensor",
+                            "type": "Sensor"
+                        }
+                    ],
                     "samples": [
+                        "the {AWS.Slot.Sensor} data",
+                        "the  {AWS.Slot.Sensor} level",
                         "how are the plants",
                         "the sensors values",
                         "the situation",
@@ -52,7 +59,59 @@
                     ]
                 }
             ],
-            "types": []
+            "types": [
+                {
+                    "name": "Sensor",
+                    "values": [
+                        {
+                            "id": "hum",
+                            "name": {
+                                "value": "humidity",
+                                "synonyms": [
+                                    "relative humidity",
+                                    "air",
+                                    "air humidity"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "temp",
+                            "name": {
+                                "value": "temperature",
+                                "synonyms": [
+                                    "ambient temperature",
+                                    "air temperature",
+                                    "temperatures",
+                                    "heat"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "light",
+                            "name": {
+                                "value": "light",
+                                "synonyms": [
+                                    "lights",
+                                    "brightens "
+                                ]
+                            }
+                        },
+                        {
+                            "id": "moist",
+                            "name": {
+                                "value": "moisture",
+                                "synonyms": [
+                                    "soil moisture",
+                                    "ground water",
+                                    "soil",
+                                    "water",
+                                    "soil water"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     }
 }

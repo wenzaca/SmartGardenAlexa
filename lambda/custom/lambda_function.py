@@ -10,29 +10,46 @@ from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler, AbstractExceptionHandler,
     AbstractRequestInterceptor, AbstractResponseInterceptor)
-from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_core.utils import is_request_type, is_intent_name, get_slot_value
 from ask_sdk_core.handler_input import HandlerInput
 
-import phrase_enum
+from phrase_enum import PhraseEnum as phrase_enum
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def get_readings_from_dynamo(self):
+def get_readings_from_dynamo():
     dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
     table = dynamodb.Table('smartgarden_readings')
     startdate = date.today().isoformat()
-    response = table.query(KeyConditionExpression='id = :id_smartgarden AND datetimeid >= :begindate',
+    response = table.query(KeyConditionExpression='id = :id_smartgarden',
                            ExpressionAttributeValues={
-                               ':id_smartgarden': 'id_smartgarden',
-                               ':begindate': startdate},
-                           ScanIndexForward=False
+                               ':id_smartgarden': 'id_smartgarden'},
+                           ScanIndexForward=False,
+                           Limit=1
                            )
     items = response['Items']
     n = 1  # get latest data
     data = items[:n]
     return data
+
+
+def get_max_data_from_dynamo():
+    dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+    table = dynamodb.Table('smartgarden_maxdata')
+
+    response = table.query(KeyConditionExpression='id = :id_smartgarden',
+                           ExpressionAttributeValues={
+                               ':id_smartgarden': 'id_smartgarden'},
+                           ScanIndexForward=False,
+                           Limit=1
+                           )
+
+    items = response['Items']
+    n = 1  # get latest data
+    data = items[:n]
+    return data[0]
 
 
 # Built-in Intent Handlers
@@ -49,9 +66,13 @@ class WaterPlantsHandler(AbstractRequestHandler):
 
         data = get_readings_from_dynamo()
         moisture = data[0]['Items']['moisture1']
-        if moisture > 50:
+        max_data = get_max_data_from_dynamo()
+        moisture_max_data = max_data['Items'][0]['moisture']
+        logger.info("The max data is {}, the latest measure of moisture was {}".format(moisture_max_data, moisture))
+        if moisture > int(moisture_max_data):
             response_alexa = phrase_enum.TOO_WET_TO_WATER + moisture
         else:
+            logger.info("M")
             client = boto3.client('iot-data', region_name='eu-west-1')
 
             # Change topic, qos and payload
@@ -60,7 +81,7 @@ class WaterPlantsHandler(AbstractRequestHandler):
                 qos=1,
                 payload=json.dumps({"action": "ON", "requester": "Alexa"})
             )
-            response_alexa = phrase_enum.WATERING_ON
+            response_alexa = phrase_enum.WATERING_ON + ' <audio src="soundbank://soundlibrary/household/water/pour_water_01"/> '
 
         handler_input.response_builder.speak(response_alexa)
         return handler_input.response_builder.response
@@ -79,10 +100,21 @@ class SensorReadingHandler(AbstractRequestHandler):
         logger.info("In SensorReadingHandler")
 
         data = get_readings_from_dynamo()[0]['Items']
+        logger.info(data)
         response_alexa = ''
 
-        for key, value in data:
-            response_alexa += phrase_enum.SENSOR_READING.format(key, value)
+        # logger.info(get_slot_value(handler_input=handler_input))
+        #
+        # if handler_input.request.intent.slots != {}:
+        #     key, value = handler_input.request.intent.slots.popitem()
+        #     response_alexa += phrase_enum.SENSOR_READING.format(key, str(value))
+        #     if 'moisture' in key or 'humidity' in key:
+        #         response_alexa += ' %.'
+        #     if 'temperature' in key:
+        #         response_alexa += ' °C.'
+        # else:
+        for key, value in data.items():
+            response_alexa += phrase_enum.SENSOR_READING.format(key, str(value)) + ' <break time="300ms"/> . '
 
         handler_input.response_builder.speak(response_alexa)
         return handler_input.response_builder.response
@@ -107,6 +139,7 @@ class HelpIntentHandler(AbstractRequestHandler):
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
+
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_request_type("LaunchRequest")(handler_input)
@@ -120,6 +153,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
 class CancelOrStopIntentHandler(AbstractRequestHandler):
     """Single handler for Cancel and Stop Intent."""
+
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return (is_intent_name("AMAZON.CancelIntent")(handler_input) or
@@ -139,6 +173,7 @@ class FallbackIntentHandler(AbstractRequestHandler):
     This handler will not be triggered except in that locale,
     so it is safe to deploy on any locale.
     """
+
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_intent_name("AMAZON.FallbackIntent")(handler_input)
@@ -154,6 +189,7 @@ class FallbackIntentHandler(AbstractRequestHandler):
 
 class SessionEndedRequestHandler(AbstractRequestHandler):
     """Handler for Session End."""
+
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
         return is_request_type("SessionEndedRequest")(handler_input)
@@ -172,6 +208,7 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
     """Catch all exception handler, log exception and
     respond with custom message.
     """
+
     def can_handle(self, handler_input, exception):
         # type: (HandlerInput, Exception) -> bool
         return True
@@ -190,6 +227,7 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 # Request and Response loggers
 class RequestLogger(AbstractRequestInterceptor):
     """Log the alexa requests."""
+
     def process(self, handler_input):
         # type: (HandlerInput) -> None
         logger.debug("Alexa Request: {}".format(
@@ -198,6 +236,7 @@ class RequestLogger(AbstractRequestInterceptor):
 
 class ResponseLogger(AbstractResponseInterceptor):
     """Log the alexa responses."""
+
     def process(self, handler_input, response):
         # type: (HandlerInput, Response) -> None
         logger.debug("Alexa Response: {}".format(response))
@@ -208,11 +247,11 @@ class ResponseLogger(AbstractResponseInterceptor):
 # defined are included below. The order matters - they're processed top to bottom.
 sb = SkillBuilder()
 sb.add_request_handler(WaterPlantsHandler())
+sb.add_request_handler(SensorReadingHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
-sb.add_request_handler(SensorReadingHandler())
 
 # Register exception handlers
 sb.add_exception_handler(CatchAllExceptionHandler())
