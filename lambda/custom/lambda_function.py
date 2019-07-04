@@ -10,7 +10,7 @@ from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler, AbstractExceptionHandler,
     AbstractRequestInterceptor, AbstractResponseInterceptor)
-from ask_sdk_core.utils import is_request_type, is_intent_name, get_slot_value
+from ask_sdk_core.utils import is_request_type, is_intent_name #, get_slot_value
 from ask_sdk_core.handler_input import HandlerInput
 
 from phrase_enum import PhraseEnum as phrase_enum
