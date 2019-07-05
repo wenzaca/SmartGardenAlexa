@@ -57,6 +57,19 @@
                         "the readings",
                         "how is it"
                     ]
+                },
+                {
+                    "name": "ReadingMaxDataIntent",
+                    "slots": [],
+                    "samples": [
+                        "to read the max data",
+                        "read the max data",
+                        "show me max data",
+                        "the allowance",
+                        "the maximum",
+                        "the max value",
+                        "the max data"
+                    ]
                 }
             ],
             "types": [
@@ -99,8 +112,9 @@
                         {
                             "id": "moist",
                             "name": {
-                                "value": "moisture",
+                                "value": "moisture1",
                                 "synonyms": [
+                                    "moisture",
                                     "soil moisture",
                                     "ground water",
                                     "soil",

@@ -10,10 +10,10 @@ from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler, AbstractExceptionHandler,
     AbstractRequestInterceptor, AbstractResponseInterceptor)
-from ask_sdk_core.utils import is_request_type, is_intent_name #, get_slot_value
+from ask_sdk_core.utils import is_request_type, is_intent_name, get_slot_value
 from ask_sdk_core.handler_input import HandlerInput
 
-from phrase_enum import PhraseEnum as phrase_enum
+import phrase_enum
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -102,19 +102,51 @@ class SensorReadingHandler(AbstractRequestHandler):
         data = get_readings_from_dynamo()[0]['Items']
         logger.info(data)
         response_alexa = ''
+        sensor_slot_value = get_slot_value(handler_input=handler_input, slot_name="AWS.Slot.Sensor")
 
-        # logger.info(get_slot_value(handler_input=handler_input))
-        #
-        # if handler_input.request.intent.slots != {}:
-        #     key, value = handler_input.request.intent.slots.popitem()
-        #     response_alexa += phrase_enum.SENSOR_READING.format(key, str(value))
-        #     if 'moisture' in key or 'humidity' in key:
-        #         response_alexa += ' %.'
-        #     if 'temperature' in key:
-        #         response_alexa += ' °C.'
-        # else:
-        for key, value in data.items():
-            response_alexa += phrase_enum.SENSOR_READING.format(key, str(value)) + ' <break time="300ms"/> . '
+        if sensor_slot_value:
+            slot_value = handler_input.request_envelope.request.intent.slots["AWS.Slot.Sensor"].resolutions.resolutions_per_authority[0].values[0].value.name
+            response_alexa += phrase_enum.SENSOR_READING.format(slot_value, str(data[slot_value]))
+            if 'temperature' in slot_value:
+                response_alexa += '°C.'
+            if 'moisture' in slot_value or 'humidity' in slot_value:
+                response_alexa += '%.'
+
+        else:
+            for key, value in data.items():
+                response_alexa += phrase_enum.SENSOR_READING.format(key, str(value))
+                if 'temperature' in key:
+                    response_alexa += '°C.'
+                if 'moisture' in key or 'humidity' in key:
+                    response_alexa += '%.'
+                response_alexa += ' <break time="300ms"/> '
+
+        handler_input.response_builder.speak(response_alexa)
+        return handler_input.response_builder.response
+
+
+# Built-in Intent Handlers
+class ReadingMaxDataHandler(AbstractRequestHandler):
+    """Handler for Skill SensorReading Intent."""
+
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("ReadingMaxDataIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In ReadingMaxDataHandler")
+
+        max_data = get_max_data_from_dynamo()
+        moisture_max_data = max_data['Items'][0]
+        response_alexa = phrase_enum.MAX_SENSOR_READING
+        for key, value in moisture_max_data.items():
+            response_alexa += phrase_enum.MAX_SENSOR_READING_PER_SENSOR.format(key, str(value))
+            if 'temperature' in key:
+                response_alexa += '°C.'
+            elif 'moisture' or 'humidity' in key:
+                response_alexa += '%.'
+            response_alexa += ' <break time="300ms"/> '
 
         handler_input.response_builder.speak(response_alexa)
         return handler_input.response_builder.response
@@ -248,6 +280,7 @@ class ResponseLogger(AbstractResponseInterceptor):
 sb = SkillBuilder()
 sb.add_request_handler(WaterPlantsHandler())
 sb.add_request_handler(SensorReadingHandler())
+sb.add_request_handler(ReadingMaxDataHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
